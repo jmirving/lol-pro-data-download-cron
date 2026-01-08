@@ -17,6 +17,27 @@ raw CSV handoff artifacts for shared consumers.
 - The canonical contract lives in Project Brain `DECISIONS.md`.
 - The download outputs are the sole inputs for downstream processors.
 
+## Setup
+- Java 17+
+- Gradle wrapper is included; use `gradle_safe` per shell policy.
+- Network access is required to reach Google Drive.
+
+## Run
+Example (current + previous year, per defaults):
+```bash
+gradle_safe bootRun --args="--prodata.download.outputDir=/path/to/output --prodata.download.tempDir=/path/to/output"
+```
+
+Example (explicit years):
+```bash
+gradle_safe bootRun --args="--prodata.download.outputDir=/path/to/output --prodata.download.tempDir=/path/to/output --prodata.download.years=2025,2026"
+```
+
+## Test
+```bash
+gradle_safe test
+```
+
 ## Configuration (Spring Boot properties)
 - `prodata.download.googleDriveFolderUrl`
   - Default: `https://drive.google.com/drive/folders/1gLSw0RLjBbtaNy0dgnGQDAZOHIgCe-HH`

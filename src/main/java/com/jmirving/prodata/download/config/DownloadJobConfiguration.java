@@ -21,6 +21,11 @@ public class DownloadJobConfiguration {
     }
 
     @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper().findAndRegisterModules();
+    }
+
+    @Bean
     public DownloadProvider downloadProvider(ProDataDownloadProperties properties) {
         return new GoogleDriveDownloadProvider(
                 properties.getGoogleDriveFolderUrl(),
