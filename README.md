@@ -25,12 +25,12 @@ raw CSV handoff artifacts for shared consumers.
 ## Run
 Example (current + previous year, per defaults):
 ```bash
-gradle_safe bootRun --args="--prodata.download.outputDir=/path/to/output --prodata.download.tempDir=/path/to/output"
+gradle_safe bootRun
 ```
 
 Example (explicit years):
 ```bash
-gradle_safe bootRun --args="--prodata.download.outputDir=/path/to/output --prodata.download.tempDir=/path/to/output --prodata.download.years=2025,2026"
+gradle_safe bootRun --args="--prodata.download.years=2025,2026"
 ```
 
 ## Test
@@ -41,10 +41,11 @@ gradle_safe test
 ## Configuration (Spring Boot properties)
 - `prodata.download.googleDriveFolderUrl`
   - Default: `https://drive.google.com/drive/folders/1gLSw0RLjBbtaNy0dgnGQDAZOHIgCe-HH`
-- `prodata.download.outputDir` (required)
+- `prodata.download.outputDir`
+  - Default: `build/prodata` (removed by `./gradlew clean`).
   - Directory to publish year CSVs and optional manifests.
 - `prodata.download.tempDir`
-  - Default: system temp directory.
+  - Default: `build/prodata/tmp`.
 - `prodata.download.years`
   - Comma-delimited list of years to fetch.
   - Default: current year + previous year.

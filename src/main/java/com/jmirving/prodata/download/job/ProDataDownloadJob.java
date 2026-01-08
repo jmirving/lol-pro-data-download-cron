@@ -96,10 +96,8 @@ public class ProDataDownloadJob {
 
     private Path resolveOutputDir() {
         String outputDir = properties.getOutputDir();
-        if (outputDir == null || outputDir.isBlank()) {
-            throw new IllegalStateException("prodata.download.outputDir is required");
-        }
-        Path path = Paths.get(outputDir).toAbsolutePath();
+        String resolved = (outputDir == null || outputDir.isBlank()) ? "build/prodata" : outputDir;
+        Path path = Paths.get(resolved).toAbsolutePath();
         try {
             Files.createDirectories(path);
         } catch (IOException e) {

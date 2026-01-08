@@ -10,8 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ProDataDownloadProperties {
     private String googleDriveFolderUrl =
             "https://drive.google.com/drive/folders/1gLSw0RLjBbtaNy0dgnGQDAZOHIgCe-HH";
-    private String outputDir;
-    private String tempDir;
+    private String outputDir = "build/prodata";
+    private String tempDir = "build/prodata/tmp";
     private List<Integer> years = new ArrayList<>();
     private boolean manifestEnabled = false;
     private String userAgent = "lol-pro-data-download-cron";
