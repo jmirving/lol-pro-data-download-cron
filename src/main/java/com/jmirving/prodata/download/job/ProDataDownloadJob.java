@@ -63,11 +63,21 @@ public class ProDataDownloadJob {
         ensureSameFileStore(outputDir, tempDir);
 
         List<RemoteFile> availableFiles = downloadProvider.listFiles();
-        List<Integer> targetYears = yearFileSelector.resolveTargetYears(properties.getYears());
-        List<RemoteFile> selectedFiles = yearFileSelector.select(availableFiles, targetYears);
-        List<Integer> missingYears = findMissingYears(targetYears, selectedFiles);
-        if (!missingYears.isEmpty()) {
-            throw new IllegalStateException("Missing CSVs for years: " + missingYears);
+        List<Integer> targetYears;
+        List<RemoteFile> selectedFiles;
+        if (properties.isIncludeAllYears()) {
+            targetYears = yearFileSelector.availableYears(availableFiles);
+            if (targetYears.isEmpty()) {
+                throw new IllegalStateException("No CSVs available to download");
+            }
+            selectedFiles = yearFileSelector.select(availableFiles, targetYears);
+        } else {
+            targetYears = yearFileSelector.resolveTargetYears(properties.getYears());
+            selectedFiles = yearFileSelector.select(availableFiles, targetYears);
+            List<Integer> missingYears = findMissingYears(targetYears, selectedFiles);
+            if (!missingYears.isEmpty()) {
+                throw new IllegalStateException("Missing CSVs for years: " + missingYears);
+            }
         }
 
         logger.info("Downloading years {} from {}", targetYears, properties.getGoogleDriveFolderUrl());

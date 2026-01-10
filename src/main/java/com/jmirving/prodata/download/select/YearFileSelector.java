@@ -41,6 +41,13 @@ public class YearFileSelector {
         return List.of(currentYear, currentYear - 1);
     }
 
+    public List<Integer> availableYears(List<RemoteFile> files) {
+        Map<Integer, RemoteFile> byYear = mapByYear(files);
+        List<Integer> years = new ArrayList<>(byYear.keySet());
+        years.sort(Integer::compareTo);
+        return years;
+    }
+
     private Map<Integer, RemoteFile> mapByYear(List<RemoteFile> files) {
         Map<Integer, RemoteFile> byYear = new HashMap<>();
         for (RemoteFile file : files) {

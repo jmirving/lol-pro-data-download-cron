@@ -63,6 +63,37 @@ class ProDataDownloadJobTest {
         assertTrue(Files.exists(tempDir.resolve("out").resolve(file2026.name() + ".manifest.json")));
     }
 
+    @Test
+    void downloadsAllAvailableYearsWhenIncludeAllYearsEnabled() {
+        RemoteFile file2024 = new RemoteFile("id2024", "2024_LoL_esports_match_data_from_OraclesElixir.csv");
+        RemoteFile file2026 = new RemoteFile("id2026", "2026_LoL_esports_match_data_from_OraclesElixir.csv");
+        Map<String, String> data = new HashMap<>();
+        data.put(file2024.id(), sampleCsv(2024));
+        data.put(file2026.id(), sampleCsv(2026));
+
+        DownloadProvider provider = new StubDownloadProvider(List.of(file2024, file2026), data);
+
+        ProDataDownloadProperties properties = new ProDataDownloadProperties();
+        properties.setOutputDir(tempDir.resolve("out-all").toString());
+        properties.setTempDir(tempDir.resolve("out-all").toString());
+        properties.setIncludeAllYears(true);
+
+        ProDataDownloadJob job = new ProDataDownloadJob(
+                properties,
+                provider,
+                new YearFileSelector(Clock.fixed(Instant.parse("2026-01-15T00:00:00Z"), ZoneOffset.UTC)),
+                new CsvHeaderValidator(),
+                new AtomicFilePublisher(),
+                new ManifestWriter(new ObjectMapper().findAndRegisterModules(), Clock.fixed(Instant.parse("2026-01-15T00:00:00Z"), ZoneOffset.UTC))
+        );
+
+        int exitCode = job.run();
+
+        assertEquals(0, exitCode);
+        assertTrue(Files.exists(tempDir.resolve("out-all").resolve(file2024.name())));
+        assertTrue(Files.exists(tempDir.resolve("out-all").resolve(file2026.name())));
+    }
+
     private String sampleCsv(int year) {
         return String.join(
                 ",",

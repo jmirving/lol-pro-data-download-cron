@@ -33,6 +33,11 @@ Example (explicit years):
 gradle_safe bootRun --args="--prodata.download.years=2025,2026"
 ```
 
+Example (all available years):
+```bash
+gradle_safe bootRun --args="--prodata.download.includeAllYears=true"
+```
+
 ## Test
 ```bash
 gradle_safe test
@@ -49,6 +54,9 @@ gradle_safe test
 - `prodata.download.years`
   - Comma-delimited list of years to fetch.
   - Default: current year + previous year.
+- `prodata.download.includeAllYears`
+  - Default: false.
+  - When true, ignores `prodata.download.years` and fetches every available year file.
 - `prodata.download.manifestEnabled`
   - Default: false.
 - `prodata.download.userAgent`

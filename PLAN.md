@@ -8,6 +8,8 @@ artifacts plus optional manifests, per `project-brain/DECISIONS.md`.
 - Tech stack mirrors `lol-ddragon-snapshot-cron`: Java + Spring Boot + Gradle.
 - Handoff contract is the authoritative spec (CSV, required columns, atomic
   replacement, optional manifest).
+- Download cron does not transform the CSV contents; it publishes the raw
+  Oracle's Elixir files (column order and extra columns preserved).
 - Keep KISS/YAGNI, but make the download method swappable with a single minimal
   abstraction (polymorphic fetcher) so we can switch sources later without
   refactoring core publish/validation logic.
@@ -19,7 +21,8 @@ artifacts plus optional manifests, per `project-brain/DECISIONS.md`.
 1. Confirm contract + configuration surface
    - Define config keys for: source URL, output file path, temp directory,
      manifest enable flag, optional user agent/timeouts, and years to fetch
-     (default: current year + previous year).
+     (default: current year + previous year, with an option to fetch all
+     available years).
    - Output layout decision: publish year-based filenames into the same output
      directory (no per-year subfolders).
    - Document config in README (or new `CONFIG.md`) with defaults.

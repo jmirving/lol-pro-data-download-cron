@@ -44,4 +44,18 @@ class YearFileSelectorTest {
 
         assertEquals(List.of(file2024), selected);
     }
+
+    @Test
+    void listsAvailableYearsFromFiles() {
+        Clock clock = Clock.systemUTC();
+        YearFileSelector selector = new YearFileSelector(clock);
+
+        RemoteFile file2024 = new RemoteFile("id2024", "2024_LoL_esports_match_data_from_OraclesElixir.csv");
+        RemoteFile file2026 = new RemoteFile("id2026", "2026_LoL_esports_match_data_from_OraclesElixir.csv");
+        List<RemoteFile> files = List.of(file2026, file2024);
+
+        List<Integer> years = selector.availableYears(files);
+
+        assertEquals(List.of(2024, 2026), years);
+    }
 }

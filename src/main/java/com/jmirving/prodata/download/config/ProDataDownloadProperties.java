@@ -13,6 +13,7 @@ public class ProDataDownloadProperties {
     private String outputDir = "build/prodata";
     private String tempDir = "build/prodata/tmp";
     private List<Integer> years = new ArrayList<>();
+    private boolean includeAllYears = false;
     private boolean manifestEnabled = false;
     private String userAgent = "lol-pro-data-download-cron";
     private Duration connectTimeout = Duration.ofSeconds(30);
@@ -48,6 +49,14 @@ public class ProDataDownloadProperties {
 
     public void setYears(List<Integer> years) {
         this.years = years;
+    }
+
+    public boolean isIncludeAllYears() {
+        return includeAllYears;
+    }
+
+    public void setIncludeAllYears(boolean includeAllYears) {
+        this.includeAllYears = includeAllYears;
     }
 
     public boolean isManifestEnabled() {
