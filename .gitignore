@@ -2,6 +2,7 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 .idea
+.beads/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
