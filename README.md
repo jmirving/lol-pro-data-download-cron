@@ -89,6 +89,10 @@ gradle_safe test
 ## Configuration (Spring Boot properties)
 - `prodata.download.googleDriveFolderUrl`
   - Default: `https://drive.google.com/drive/folders/1gLSw0RLjBbtaNy0dgnGQDAZOHIgCe-HH`
+- `prodata.download.googleDriveDownloadUrl`
+  - Default: `https://drive.google.com/uc`.
+  - Base endpoint used to download a listed file. Override it together with the
+    folder URL to run the complete download flow against local test infrastructure.
 - `prodata.download.outputDir`
   - Default: `build/prodata` (removed by `./gradlew clean`).
   - Directory to publish year CSVs and optional manifests.

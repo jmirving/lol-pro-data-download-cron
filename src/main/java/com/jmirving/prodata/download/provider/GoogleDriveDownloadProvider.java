@@ -31,11 +31,19 @@ public class GoogleDriveDownloadProvider implements DownloadProvider {
     private static final Pattern DOWNLOAD_WARNING_COOKIE_PATTERN = Pattern.compile("download_warning[^=]*=([^;]+)");
     private final HttpClient httpClient;
     private final String folderUrl;
+    private final String downloadUrl;
     private final String userAgent;
     private final Duration readTimeout;
 
-    public GoogleDriveDownloadProvider(String folderUrl, String userAgent, Duration connectTimeout, Duration readTimeout) {
+    public GoogleDriveDownloadProvider(
+            String folderUrl,
+            String downloadUrl,
+            String userAgent,
+            Duration connectTimeout,
+            Duration readTimeout
+    ) {
         this.folderUrl = folderUrl;
+        this.downloadUrl = downloadUrl;
         this.userAgent = userAgent;
         this.readTimeout = readTimeout;
         this.httpClient = HttpClient.newBuilder()
@@ -154,10 +162,19 @@ public class GoogleDriveDownloadProvider implements DownloadProvider {
     }
 
     private URI buildDownloadUri(String fileId, Optional<String> confirmToken) {
-        StringBuilder uri = new StringBuilder("https://drive.google.com/uc?export=download&id=")
-                .append(fileId);
-        confirmToken.ifPresent(token -> uri.append("&confirm=").append(token));
-        return URI.create(uri.toString());
+        int fragmentIndex = downloadUrl.indexOf('#');
+        String endpoint = fragmentIndex >= 0 ? downloadUrl.substring(0, fragmentIndex) : downloadUrl;
+        String fragment = fragmentIndex >= 0 ? downloadUrl.substring(fragmentIndex) : "";
+        String separator = endpoint.contains("?")
+                ? (endpoint.endsWith("?") || endpoint.endsWith("&") ? "" : "&")
+                : "?";
+        StringBuilder uri = new StringBuilder(endpoint)
+                .append(separator)
+                .append("export=download&id=")
+                .append(URLEncoder.encode(fileId, StandardCharsets.UTF_8));
+        confirmToken.ifPresent(token -> uri.append("&confirm=")
+                .append(URLEncoder.encode(token, StandardCharsets.UTF_8)));
+        return URI.create(uri.append(fragment).toString());
     }
 
     private URI buildFormUri(DownloadForm form) {

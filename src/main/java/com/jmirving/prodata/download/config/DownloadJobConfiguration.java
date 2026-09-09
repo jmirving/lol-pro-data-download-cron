@@ -29,6 +29,7 @@ public class DownloadJobConfiguration {
     public DownloadProvider downloadProvider(ProDataDownloadProperties properties) {
         return new GoogleDriveDownloadProvider(
                 properties.getGoogleDriveFolderUrl(),
+                properties.getGoogleDriveDownloadUrl(),
                 properties.getUserAgent(),
                 properties.getConnectTimeout(),
                 properties.getReadTimeout()

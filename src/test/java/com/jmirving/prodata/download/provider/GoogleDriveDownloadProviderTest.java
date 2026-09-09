@@ -5,9 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
+import com.jmirving.prodata.download.config.ProDataDownloadProperties;
 import org.junit.jupiter.api.Test;
 
 class GoogleDriveDownloadProviderTest {
+    @Test
+    void productionDownloadEndpointRemainsTheDefault() {
+        ProDataDownloadProperties properties = new ProDataDownloadProperties();
+
+        assertEquals("https://drive.google.com/uc", properties.getGoogleDriveDownloadUrl());
+    }
+
     @Test
     void extractsConfirmTokenFromHtml() {
         String html = "<a href=\"https://drive.google.com/uc?export=download&confirm=t-AB_12&id=123\">download</a>";

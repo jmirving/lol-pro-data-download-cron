@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ProDataDownloadProperties {
     private String googleDriveFolderUrl =
             "https://drive.google.com/drive/folders/1gLSw0RLjBbtaNy0dgnGQDAZOHIgCe-HH";
+    private String googleDriveDownloadUrl = "https://drive.google.com/uc";
     private String outputDir = "build/prodata";
     private String tempDir;
     private List<Integer> years = new ArrayList<>();
@@ -26,6 +27,14 @@ public class ProDataDownloadProperties {
 
     public void setGoogleDriveFolderUrl(String googleDriveFolderUrl) {
         this.googleDriveFolderUrl = googleDriveFolderUrl;
+    }
+
+    public String getGoogleDriveDownloadUrl() {
+        return googleDriveDownloadUrl;
+    }
+
+    public void setGoogleDriveDownloadUrl(String googleDriveDownloadUrl) {
+        this.googleDriveDownloadUrl = googleDriveDownloadUrl;
     }
 
     public String getOutputDir() {
