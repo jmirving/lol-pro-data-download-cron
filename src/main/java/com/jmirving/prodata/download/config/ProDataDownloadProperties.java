@@ -11,10 +11,11 @@ public class ProDataDownloadProperties {
     private String googleDriveFolderUrl =
             "https://drive.google.com/drive/folders/1gLSw0RLjBbtaNy0dgnGQDAZOHIgCe-HH";
     private String outputDir = "build/prodata";
-    private String tempDir = "build/prodata/tmp";
+    private String tempDir;
     private List<Integer> years = new ArrayList<>();
     private boolean includeAllYears = false;
     private boolean manifestEnabled = false;
+    private StructuredOutput structuredOutput = StructuredOutput.NONE;
     private String userAgent = "lol-pro-data-download-cron";
     private Duration connectTimeout = Duration.ofSeconds(30);
     private Duration readTimeout = Duration.ofSeconds(120);
@@ -67,6 +68,14 @@ public class ProDataDownloadProperties {
         this.manifestEnabled = manifestEnabled;
     }
 
+    public StructuredOutput getStructuredOutput() {
+        return structuredOutput;
+    }
+
+    public void setStructuredOutput(StructuredOutput structuredOutput) {
+        this.structuredOutput = structuredOutput;
+    }
+
     public String getUserAgent() {
         return userAgent;
     }
@@ -89,5 +98,10 @@ public class ProDataDownloadProperties {
 
     public void setReadTimeout(Duration readTimeout) {
         this.readTimeout = readTimeout;
+    }
+
+    public enum StructuredOutput {
+        NONE,
+        JSON
     }
 }

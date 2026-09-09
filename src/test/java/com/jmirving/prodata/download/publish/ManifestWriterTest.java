@@ -2,6 +2,7 @@ package com.jmirving.prodata.download.publish;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,6 +41,29 @@ class ManifestWriterTest {
         assertEquals(sourceUrl, manifest.sourceUrl());
         assertEquals(expectedSha256(csv), manifest.sha256());
         assertEquals(manifest, persisted);
+
+        String json = Files.readString(manifestPath);
+        assertTrue(json.contains("\"generated_at\""));
+        assertTrue(json.contains("\"row_count\""));
+        assertTrue(json.contains("\"source_url\""));
+    }
+
+    @Test
+    void safelyReplacesAnExistingManifest() throws IOException {
+        Path csv = tempDir.resolve("2026_LoL_esports_match_data_from_OraclesElixir.csv");
+        Files.writeString(csv, "a,b\n1,2\n");
+        Path manifestPath = tempDir.resolve(csv.getFileName() + ".manifest.json");
+        Files.writeString(manifestPath, "stale");
+
+        ManifestWriter writer = new ManifestWriter(
+                new ObjectMapper().findAndRegisterModules(),
+                Clock.fixed(Instant.parse("2026-01-08T12:00:00Z"), ZoneOffset.UTC)
+        );
+
+        DownloadManifest manifest = writer.write(csv, manifestPath, "https://example.com/source.csv");
+
+        assertEquals(manifest, new ObjectMapper().findAndRegisterModules()
+                .readValue(manifestPath.toFile(), DownloadManifest.class));
     }
 
     private String expectedSha256(Path path) throws IOException, NoSuchAlgorithmException {

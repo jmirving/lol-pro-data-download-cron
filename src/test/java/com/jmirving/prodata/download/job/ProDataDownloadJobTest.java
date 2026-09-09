@@ -1,6 +1,8 @@
 package com.jmirving.prodata.download.job;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -61,6 +63,98 @@ class ProDataDownloadJobTest {
         assertTrue(Files.exists(tempDir.resolve("out").resolve(file2026.name())));
         assertTrue(Files.exists(tempDir.resolve("out").resolve(file2025.name() + ".manifest.json")));
         assertTrue(Files.exists(tempDir.resolve("out").resolve(file2026.name() + ".manifest.json")));
+    }
+
+    @Test
+    void reportsPublishedArtifactsForStructuredConsumers() {
+        RemoteFile file = new RemoteFile("id2026", "2026_LoL_esports_match_data_from_OraclesElixir.csv");
+        DownloadProvider provider = new StubDownloadProvider(List.of(file), Map.of(file.id(), sampleCsv(2026)));
+
+        ProDataDownloadProperties properties = new ProDataDownloadProperties();
+        properties.setOutputDir(tempDir.resolve("ephemeral-output").toString());
+        properties.setYears(List.of(2026));
+        properties.setManifestEnabled(true);
+
+        ProDataDownloadJob job = new ProDataDownloadJob(
+                properties,
+                provider,
+                new YearFileSelector(Clock.fixed(Instant.parse("2026-01-15T00:00:00Z"), ZoneOffset.UTC)),
+                new CsvHeaderValidator(),
+                new AtomicFilePublisher(),
+                new ManifestWriter(new ObjectMapper().findAndRegisterModules(),
+                        Clock.fixed(Instant.parse("2026-01-15T00:00:00Z"), ZoneOffset.UTC))
+        );
+
+        DownloadJobResult result = job.runWithResult();
+
+        assertEquals("SUCCESS", result.status());
+        assertEquals(0, result.exitCode());
+        assertEquals(tempDir.resolve("ephemeral-output").toAbsolutePath().toString(),
+                result.metadata().outputDirectory());
+        assertEquals(List.of(2026), result.metadata().years());
+        assertEquals(1, result.metadata().artifacts().size());
+        DownloadArtifactResult artifact = result.metadata().artifacts().get(0);
+        assertEquals(2026, artifact.year());
+        assertEquals(file.name(), artifact.fileName());
+        assertEquals(1, artifact.rowCount());
+        assertEquals("stub://id2026", artifact.sourceUrl());
+        assertNotNull(artifact.sha256());
+        assertNotNull(artifact.manifestPath());
+        assertTrue(Files.exists(Path.of(artifact.path())));
+        assertTrue(Files.exists(Path.of(artifact.manifestPath())));
+        assertFalse(Files.exists(tempDir.resolve("ephemeral-output").resolve("tmp"))
+                && hasRegularFiles(tempDir.resolve("ephemeral-output").resolve("tmp")));
+    }
+
+    @Test
+    void returnsMachineReadableFailureWithNonZeroExitCode() {
+        ProDataDownloadProperties properties = new ProDataDownloadProperties();
+        properties.setOutputDir(tempDir.resolve("failed-output").toString());
+        properties.setYears(List.of(2026));
+
+        ProDataDownloadJob job = new ProDataDownloadJob(
+                properties,
+                new StubDownloadProvider(List.of(), Map.of()),
+                new YearFileSelector(Clock.fixed(Instant.parse("2026-01-15T00:00:00Z"), ZoneOffset.UTC)),
+                new CsvHeaderValidator(),
+                new AtomicFilePublisher(),
+                new ManifestWriter(new ObjectMapper().findAndRegisterModules(), Clock.systemUTC())
+        );
+
+        DownloadJobResult result = job.runWithResult();
+
+        assertEquals("FAILED", result.status());
+        assertEquals("DOWNLOAD_FAILED", result.reasonCode());
+        assertEquals(1, result.exitCode());
+        assertTrue(result.error().contains("Missing CSVs for years: [2026]"));
+    }
+
+    @Test
+    void validationFailurePreservesPublishedFileAndCleansTemporaryDownload() throws IOException {
+        RemoteFile file = new RemoteFile("id2026", "2026_LoL_esports_match_data_from_OraclesElixir.csv");
+        Path outputDir = tempDir.resolve("repeat-safe-output");
+        Files.createDirectories(outputDir);
+        Path published = outputDir.resolve(file.name());
+        Files.writeString(published, "previous-good-data");
+
+        ProDataDownloadProperties properties = new ProDataDownloadProperties();
+        properties.setOutputDir(outputDir.toString());
+        properties.setYears(List.of(2026));
+
+        ProDataDownloadJob job = new ProDataDownloadJob(
+                properties,
+                new StubDownloadProvider(List.of(file), Map.of(file.id(), "not,a,valid,header\n")),
+                new YearFileSelector(Clock.fixed(Instant.parse("2026-01-15T00:00:00Z"), ZoneOffset.UTC)),
+                new CsvHeaderValidator(),
+                new AtomicFilePublisher(),
+                new ManifestWriter(new ObjectMapper().findAndRegisterModules(), Clock.systemUTC())
+        );
+
+        DownloadJobResult result = job.runWithResult();
+
+        assertEquals("FAILED", result.status());
+        assertEquals("previous-good-data", Files.readString(published));
+        assertFalse(hasRegularFiles(outputDir.resolve("tmp")));
     }
 
     @Test
@@ -141,6 +235,14 @@ class ProDataDownloadJobTest {
                         "I",
                         "J"
                 ) + "\n";
+    }
+
+    private boolean hasRegularFiles(Path directory) {
+        try (var entries = Files.list(directory)) {
+            return entries.anyMatch(Files::isRegularFile);
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private static class StubDownloadProvider implements DownloadProvider {

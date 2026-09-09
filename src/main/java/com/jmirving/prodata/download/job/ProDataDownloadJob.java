@@ -5,6 +5,7 @@ import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -48,16 +49,19 @@ public class ProDataDownloadJob {
     }
 
     public int run() {
+        return runWithResult().exitCode();
+    }
+
+    public DownloadJobResult runWithResult() {
         try {
-            execute();
-            return 0;
+            return DownloadJobResult.success(execute());
         } catch (Exception e) {
             logger.error("Pro data download failed", e);
-            return 1;
+            return DownloadJobResult.failure(e);
         }
     }
 
-    private void execute() throws IOException, InterruptedException {
+    private DownloadJobMetadata execute() throws IOException, InterruptedException {
         Path outputDir = resolveOutputDir();
         Path tempDir = resolveTempDir(outputDir);
         ensureSameFileStore(outputDir, tempDir);
@@ -81,27 +85,45 @@ public class ProDataDownloadJob {
         }
 
         logger.info("Downloading years {} from {}", targetYears, properties.getGoogleDriveFolderUrl());
+        List<DownloadArtifactResult> artifacts = new ArrayList<>();
         for (RemoteFile file : selectedFiles) {
             Path tempFile = createTempFile(tempDir, file.name());
-            downloadProvider.download(file, tempFile);
-            csvHeaderValidator.validate(tempFile);
+            try {
+                downloadProvider.download(file, tempFile);
+                csvHeaderValidator.validate(tempFile);
 
-            Path destination = outputDir.resolve(file.name());
-            filePublisher.publish(tempFile, destination);
+                Path destination = outputDir.resolve(file.name());
+                filePublisher.publish(tempFile, destination);
 
-            String sourceUrl = downloadProvider.sourceUrl(file);
-            DownloadManifest manifest = properties.isManifestEnabled()
-                    ? manifestWriter.write(destination, manifestPath(destination), sourceUrl)
-                    : manifestWriter.buildManifest(destination, sourceUrl);
+                String sourceUrl = downloadProvider.sourceUrl(file);
+                Path manifestDestination = properties.isManifestEnabled() ? manifestPath(destination) : null;
+                DownloadManifest manifest = manifestDestination != null
+                        ? manifestWriter.write(destination, manifestDestination, sourceUrl)
+                        : manifestWriter.buildManifest(destination, sourceUrl);
 
-            logger.info(
-                    "Published {} (rows={}, sha256={}, source={})",
-                    destination,
-                    manifest.rowCount(),
-                    manifest.sha256(),
-                    manifest.sourceUrl()
-            );
+                artifacts.add(new DownloadArtifactResult(
+                        extractYear(file.name()),
+                        file.name(),
+                        destination.toString(),
+                        manifestDestination == null ? null : manifestDestination.toString(),
+                        manifest.generatedAt(),
+                        manifest.rowCount(),
+                        manifest.sha256(),
+                        manifest.sourceUrl()
+                ));
+
+                logger.info(
+                        "Published {} (rows={}, sha256={}, source={})",
+                        destination,
+                        manifest.rowCount(),
+                        manifest.sha256(),
+                        manifest.sourceUrl()
+                );
+            } finally {
+                Files.deleteIfExists(tempFile);
+            }
         }
+        return new DownloadJobMetadata(outputDir.toString(), List.copyOf(targetYears), List.copyOf(artifacts));
     }
 
     private Path resolveOutputDir() {
@@ -119,7 +141,7 @@ public class ProDataDownloadJob {
     private Path resolveTempDir(Path outputDir) {
         String configuredTempDir = properties.getTempDir();
         Path tempDir = configuredTempDir == null || configuredTempDir.isBlank()
-                ? outputDir
+                ? outputDir.resolve("tmp")
                 : Paths.get(configuredTempDir).toAbsolutePath();
         try {
             Files.createDirectories(tempDir);
@@ -161,5 +183,9 @@ public class ProDataDownloadJob {
 
     private Path manifestPath(Path destination) {
         return destination.resolveSibling(destination.getFileName() + ".manifest.json");
+    }
+
+    private int extractYear(String filename) {
+        return Integer.parseInt(filename.substring(0, 4));
     }
 }

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
@@ -26,7 +27,23 @@ public class ManifestWriter {
 
     public DownloadManifest write(Path csvPath, Path manifestPath, String sourceUrl) throws IOException {
         DownloadManifest manifest = buildManifest(csvPath, sourceUrl);
-        objectMapper.writeValue(manifestPath.toFile(), manifest);
+        Files.createDirectories(manifestPath.toAbsolutePath().getParent());
+        Path tempManifest = Files.createTempFile(
+                manifestPath.toAbsolutePath().getParent(),
+                manifestPath.getFileName().toString() + "-",
+                ".tmp"
+        );
+        try {
+            objectMapper.writeValue(tempManifest.toFile(), manifest);
+            Files.move(
+                    tempManifest,
+                    manifestPath,
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+        } finally {
+            Files.deleteIfExists(tempManifest);
+        }
         return manifest;
     }
 
